@@ -1,5 +1,6 @@
-import { Timeline, TimelineItem, TimelineSeparator, TimelineDot, TimelineConnector, TimelineContent, timelineItemClasses } from '@mui/lab'
+// Timeline components no longer needed - using custom implementation
 import { Typography, Box } from '@mui/material'
+import { Virtuoso } from 'react-virtuoso'
 import dayjs from 'dayjs'
 import './App.css'
 
@@ -70,142 +71,190 @@ function App() {
     return `${typeDisplay} - ${config}`;
   };
 
-  const AuditLog = ({ history }: { history: any[] }) => {
-        return (
-            <Timeline
-                position={"right"}
-                sx={{
-                    [`& .${timelineItemClasses.root}:before`]: {
-                        flex: 0,
-                        padding: 0,
-                    },
-                    p: 0,
-                }}>
-                {history.map((entry, i) => {
-                    const disabledConfigs = entry.disabledConfigs == null ? new Map() : entry.disabledConfigs;
-                    const enabledConfigs = entry.enabledConfigs == null ? new Map() : entry.enabledConfigs;
-                    const hasDisabled = Object.keys(disabledConfigs).length > 0;
-                    const hasEnabled = Object.keys(enabledConfigs).length > 0;
-                    if (!hasDisabled && !hasEnabled) {
-                        return undefined;
-                    }
+  const TimelineItemComponent = ({ entry }: { entry: any; index: number }) => {
+    const disabledConfigs = entry.disabledConfigs == null ? {} : entry.disabledConfigs;
+    const enabledConfigs = entry.enabledConfigs == null ? {} : entry.enabledConfigs;
+    const hasDisabled = Object.keys(disabledConfigs).length > 0;
+    const hasEnabled = Object.keys(enabledConfigs).length > 0;
     
-                    return (
-                        <TimelineItem
-                            data-testid={`history-entry-${i}`}
-                            key={i}>
-                            <TimelineSeparator>
-                                <TimelineDot
-                                    sx={{
-                                        backgroundColor: "#11abd1",
-                                        height: { xs: 8, xl: 10 },
-                                        width: { xs: 8, xl: 10 },
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: { xs: "1rem", xl: "1.25rem" },
-                                    }}>
-                                    {entry.modifiedBy.substring(0, 2).toUpperCase()}
-                                </TimelineDot>
-                                <TimelineConnector />
-                            </TimelineSeparator>
-                            <TimelineContent sx={{ p: 0, pt: 0.5, pl: 1 }}>
-                                <Box sx={{ pt: 1.25, display: "flex" }}>
-                                    <Typography
-                                        sx={{ fontWeight: "bold", fontSize: { xs: "1.05rem", xl: "1.25rem" }, pr: 0.5 }}>
-                                        {entry.modifiedBy}
-                                    </Typography>
-                                    <Typography sx={{ fontStyle: "italic", fontSize: { xs: "1.05rem", xl: "1.25rem" } }}>
-                                        {dayjs(entry.modifiedAt).format("M/DD/YYYY @ h:mm A")}
-                                    </Typography>
-                                </Box>
-                                <Box
-                                    component={"ul"}
-                                    sx={{ listStyle: "disc inside", m: 0, p: 0 }}>
-                                    {hasDisabled && (
-                                        <>
-                                            <Typography
-                                                sx={{
-                                                    fontWeight: "bold",
-                                                    color: "red",
-                                                    fontSize: { xs: "1.05rem", xl: "1.25rem" },
-                                                }}>
-                                                Updated to Ineligible
-                                            </Typography>
-                                            {Object.entries(disabledConfigs).map(([type, configs], i) => {
-                                                const typeDisplay = tabMap.get(type) || "";
-    return (configs as string[]).map((config: string, configIndex: number) => (
-      <Box
-          key={`${i}-${configIndex}`}
-                                                        component="li"
-                                                        sx={{
-                                                            m: 0,
-                                                            py: 0,
-                                                            "&::marker": { color: "#8B96A6" },
-                                                            mb: i === (configs as string[]).length - 1 ? 0 : 0.25,
-                                                        }}>
-                                                        <Typography
-                                                            variant={"body2"}
-                                                            component={"span"}
-                                                            sx={{
-                                                                fontSize: { xs: "1.05rem", xl: "1.25rem" },
-                                                                color: "#8B96A6",
-                                                            }}>
-                                                            {typeDisplay} - {config}
-                                                        </Typography>
-                                                    </Box>
-                                                ));
-                                            })}
-                                        </>
-                                    )}
-                                </Box>
-                                <Box
-                                    component={"ul"}
-                                    sx={{ listStyle: "disc inside", m: 0, p: 0 }}>
-                                    {hasEnabled && (
-                                        <>
-                                            <Typography
-                                                sx={{
-                                                    fontWeight: "bold",
-                                                    color: "green",
-                                                    fontSize: { xs: "1.05rem", xl: "1.25rem" },
-                                                }}>
-                                                Updated to Eligible
-                                            </Typography>
-                        {Object.entries(enabledConfigs).map(([type, configs], i) => {
-                            const typeDisplay = tabMap.get(type) || "";
-                            return (configs as string[]).map((config: string, configIndex: number) => (
-                                <Box
-                                    key={`${i}-${configIndex}`}
-                                                        component="li"
-                                                        sx={{
-                                                            m: 0,
-                                                            py: 0,
-                                                            "&::marker": { color: "#8B96A6" },
-                                                            mb: configIndex === (configs as string[]).length - 1 ? 0 : 0.25,
-                                                        }}>
-                                                        <Typography
-                                                            variant={"body2"}
-                                                            component={"span"}
-                                                            sx={{
-                                                                fontSize: { xs: "1.05rem", xl: "1.25rem" },
-                                                                color: "#8B96A6",
-                                                            }}>
-                                                            {typeDisplay} - {formatChangeLogVal(config, typeDisplay)}
-                                                        </Typography>
-                                                    </Box>
-                                                ));
-                                            })}
-                                        </>
-                                    )}
-                                </Box>
-                            </TimelineContent>
-                        </TimelineItem>
-                    );
-                })}
-            </Timeline>
-        );
-    };
+    if (!hasDisabled && !hasEnabled) {
+      return null;
+    }
+
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        mb: 3, 
+        position: 'relative',
+        '&:not(:last-child)::after': {
+          content: '""',
+          position: 'absolute',
+          left: '15px',
+          top: '30px',
+          bottom: '-24px',
+          width: '2px',
+          backgroundColor: '#e0e0e0'
+        }
+      }}>
+        {/* Timeline dot */}
+        <Box sx={{ 
+          position: 'relative',
+          zIndex: 1,
+          mr: 2,
+          mt: 0.5
+        }}>
+          <Box sx={{
+            width: 30,
+            height: 30,
+            borderRadius: '50%',
+            backgroundColor: '#11abd1',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            color: 'white',
+            border: '3px solid white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            {entry.modifiedBy.substring(0, 2).toUpperCase()}
+          </Box>
+        </Box>
+
+        {/* Content */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ 
+            display: "flex", 
+            mb: 1,
+            position: 'sticky',
+            top: 0,
+            backgroundColor: 'white',
+            zIndex: 10,
+            py: 1,
+            borderBottom: '1px solid #e0e0e0',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+          }}>
+            <Typography
+              sx={{ fontWeight: "bold", fontSize: "1.1rem", pr: 1 }}>
+              {entry.modifiedBy}
+            </Typography>
+            <Typography sx={{ fontStyle: "italic", fontSize: "1.1rem", color: '#666' }}>
+              {dayjs(entry.modifiedAt).format("M/DD/YYYY @ h:mm A")}
+            </Typography>
+          </Box>
+          
+          {hasDisabled && (
+            <Box sx={{ mb: 2 }}>
+              <Typography
+                sx={{
+                  fontWeight: "bold",
+                  color: "red",
+                  fontSize: "1rem",
+                  mb: 1
+                }}>
+                Updated to Ineligible
+              </Typography>
+              <Box component="ul" sx={{ listStyle: "disc inside", m: 0, p: 0, pl: 1 }}>
+                {Object.entries(disabledConfigs).map(([type, configs], i) => {
+                  const typeDisplay = tabMap.get(type) || "";
+                  return (configs as string[]).map((config: string, configIndex: number) => (
+                    <Box
+                      key={`${i}-${configIndex}`}
+                      component="li"
+                      sx={{
+                        m: 0,
+                        py: 0.25,
+                        "&::marker": { color: "#8B96A6" },
+                        mb: configIndex === (configs as string[]).length - 1 ? 0 : 0.25,
+                      }}>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{
+                          fontSize: "0.95rem",
+                          color: "#8B96A6",
+                        }}>
+                        {typeDisplay} - {config}
+                      </Typography>
+                    </Box>
+                  ));
+                })}
+              </Box>
+            </Box>
+          )}
+          
+          {hasEnabled && (
+            <Box>
+              <Typography
+                sx={{
+                  fontWeight: "bold",
+                  color: "green",
+                  fontSize: "1rem",
+                  mb: 1
+                }}>
+                Updated to Eligible
+              </Typography>
+              <Box component="ul" sx={{ listStyle: "disc inside", m: 0, p: 0, pl: 1 }}>
+                {Object.entries(enabledConfigs).map(([type, configs], i) => {
+                  const typeDisplay = tabMap.get(type) || "";
+                  return (configs as string[]).map((config: string, configIndex: number) => (
+                    <Box
+                      key={`${i}-${configIndex}`}
+                      component="li"
+                      sx={{
+                        m: 0,
+                        py: 0.25,
+                        "&::marker": { color: "#8B96A6" },
+                        mb: configIndex === (configs as string[]).length - 1 ? 0 : 0.25,
+                      }}>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{
+                          fontSize: "0.95rem",
+                          color: "#8B96A6",
+                        }}>
+                        {typeDisplay} - {formatChangeLogVal(config, typeDisplay)}
+                      </Typography>
+                    </Box>
+                  ));
+                })}
+              </Box>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  const AuditLog = ({ history }: { history: any[] }) => {
+    // Filter out entries with no changes
+    const validEntries = history.filter(entry => {
+      const hasDisabled = entry.disabledConfigs && Object.keys(entry.disabledConfigs).length > 0;
+      const hasEnabled = entry.enabledConfigs && Object.keys(entry.enabledConfigs).length > 0;
+      return hasDisabled || hasEnabled;
+    });
+
+    return (
+      <Box sx={{ 
+        height: '600px', 
+        width: '800px',
+        border: '1px solid #e0e0e0', 
+        borderRadius: 1, 
+        overflow: 'hidden',
+        mx: 'auto',
+        p: 2
+      }}>
+        <Virtuoso
+          data={validEntries}
+          itemContent={(index, entry) => (
+            <TimelineItemComponent entry={entry} index={index} />
+          )}
+          style={{ height: '100%', width: '100%' }}
+        />
+      </Box>
+    );
+  };
   return (
     <>
       
